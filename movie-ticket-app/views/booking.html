@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Tickets - MovieTix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .seat {
+            width: 35px;
+            height: 35px;
+            margin: 3px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .seat.available {
+            background-color: #fff;
+            border: 2px solid #4f46e5;
+        }
+        .seat.selected {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+        }
+        .seat.unavailable {
+            background-color: #d1d5db;
+            border-color: #d1d5db;
+            cursor: not-allowed;
+        }
+        .screen {
+            background: #e5e7eb;
+            height: 70px;
+            width: 100%;
+            margin: 15px 0;
+            transform: rotateX(-45deg);
+            box-shadow: 0 3px 10px rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-indigo-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-film text-2xl mr-2"></i>
+                        <span class="text-xl font-semibold">MovieTix</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-4" id="navLinks">
+                    <a href="/" class="hover:text-indigo-200">Home</a>
+                    <a href="/profile" class="hover:text-indigo-200" id="profileLink">
+                        <i class="fas fa-user mr-1"></i>
+                        <span id="username">Profile</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600"></div>
+    </div>
+
+    <!-- Error Alert -->
+    <div id="errorAlert" class="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50 hidden" role="alert">
+        <span id="errorMessage" class="block sm:inline"></span>
+    </div>
+
+    <!-- Booking Section -->
+    <div class="container mx-auto px-6 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Movie Info -->
+            <div id="movieInfo" class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <!-- Movie details will be loaded here -->
+            </div>
+
+            <!-- Seat Selection -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-6">Select Your Seats</h2>
+                
+                <!-- Screen -->
+                <div class="text-center mb-8">
+                    <div class="screen"></div>
+                    <p class="text-gray-600 mt-2">Screen</p>
+                </div>
+
+                <!-- Seat Map -->
+                <div id="seatMap" class="flex flex-col items-center mb-8">
+                    <!-- Seats will be generated here -->
+                </div>
+
+                <!-- Seat Legend -->
+                <div class="flex justify-center gap-8 mb-8">
+                    <div class="flex items-center">
+                        <div class="seat available mr-2"></div>
+                        <span>Available</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="seat selected mr-2"></div>
+                        <span>Selected</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="seat unavailable mr-2"></div>
+                        <span>Unavailable</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Form -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold mb-6">Complete Your Booking</h2>
+                <form id="bookingForm" class="space-y-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Selected Seats</label>
+                        <p id="selectedSeatsDisplay" class="text-lg font-semibold text-indigo-600">None selected</p>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Total Amount</label>
+                        <p id="totalAmount" class="text-2xl font-bold text-indigo-600">$0.00</p>
+                    </div>
+                    <button type="submit" 
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                        Confirm Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!token || !user) {
+            window.location.href = '/login';
+        }
+
+        // Update navigation
+        document.getElementById('username').textContent = user.username;
+
+        let movie;
+        let selectedSeats = [];
+        let showTime;
+        const PRICE_PER_SEAT = 10; // Default price, will be updated from movie data
+
+        function showLoading() {
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingSpinner').classList.add('hidden');
+        }
+
+        function showError(message) {
+            const errorAlert = document.getElementById('errorAlert');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorAlert.classList.remove('hidden');
+            setTimeout(() => {
+                errorAlert.classList.add('hidden');
+            }, 5000);
+        }
+
+        async function fetchMovieAndShowTime() {
+            try {
+                showLoading();
+                const movieId = window.location.pathname.split('/')[2];
+                const urlParams = new URLSearchParams(window.location.search);
+                showTime = urlParams.get('time');
+
+                if (!movieId || !showTime) {
+                    throw new Error('Invalid movie or show time');
+                }
+
+                const response = await fetch(`/api/movies/${movieId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch movie details');
+                }
+
+                movie = await response.json();
+                PRICE_PER_SEAT = movie.price || PRICE_PER_SEAT;
+
+                // Update page title
+                document.title = `Book Tickets for ${movie.title} - MovieTix`;
+
+                // Display movie info
+                const showTimeDate = new Date(showTime);
+                const movieInfoHtml = `
+                    <div class="flex items-start">
+                        <img src="${movie.posterUrl}" alt="${movie.title}" class="w-32 h-auto rounded">
+                        <div class="ml-6">
+                            <h1 class="text-2xl font-bold mb-2">${movie.title}</h1>
+                            <p class="text-gray-600 mb-2">${movie.genre.join(', ')}</p>
+                            <p class="mb-2">
+                                <i class="far fa-calendar-alt mr-2"></i>
+                                ${showTimeDate.toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                })}
+                            </p>
+                            <p>
+                                <i class="far fa-clock mr-2"></i>
+                                ${showTimeDate.toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                })}
+                            </p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('movieInfo').innerHTML = movieInfoHtml;
+
+                // Generate seat map
+                const selectedShowTime = movie.showTimes.find(
+                    show => new Date(show.time).toISOString() === new Date(showTime).toISOString()
+                );
+
+                if (selectedShowTime) {
+                    generateSeatMap(selectedShowTime.availableSeats);
+                } else {
+                    throw new Error('Show time not found');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'Failed to load booking details');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function generateSeatMap(availableSeats) {
+            const seatMap = document.getElementById('seatMap');
+            seatMap.innerHTML = '';
+
+            for (let row = 0; row < availableSeats.length; row++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'flex justify-center';
+
+                // Add row label
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'w-8 flex items-center justify-center font-semibold';
+                rowLabel.textContent = String.fromCharCode(65 + row);
+                rowDiv.appendChild(rowLabel);
+
+                for (let col = 0; col < availableSeats[row].length; col++) {
+                    const seat = document.createElement('div');
+                    seat.className = `seat ${availableSeats[row][col] ? 'available' : 'unavailable'}`;
+                    seat.dataset.row = row;
+                    seat.dataset.col = col;
+
+                    if (availableSeats[row][col]) {
+                        seat.addEventListener('click', () => toggleSeat(seat, row, col));
+                    }
+
+                    rowDiv.appendChild(seat);
+                }
+                seatMap.appendChild(rowDiv);
+            }
+        }
+
+        function toggleSeat(seatElement, row, col) {
+            const seatIndex = selectedSeats.findIndex(
+                seat => seat.row === row && seat.column === col
+            );
+
+            if (seatIndex === -1) {
+                selectedSeats.push({ row, column: col });
+                seatElement.classList.remove('available');
+                seatElement.classList.add('selected');
+            } else {
+                selectedSeats.splice(seatIndex, 1);
+                seatElement.classList.remove('selected');
+                seatElement.classList.add('available');
+            }
+
+            updateBookingDetails();
+        }
+
+        function updateBookingDetails() {
+            const selectedSeatsDisplay = document.getElementById('selectedSeatsDisplay');
+            const totalAmountDisplay = document.getElementById('totalAmount');
+
+            if (selectedSeats.length > 0) {
+                const seatNumbers = selectedSeats.map(seat => 
+                    `${String.fromCharCode(65 + seat.row)}${seat.column + 1}`
+                ).join(', ');
+                selectedSeatsDisplay.textContent = seatNumbers;
+                totalAmountDisplay.textContent = `$${(selectedSeats.length * PRICE_PER_SEAT).toFixed(2)}`;
+            } else {
+                selectedSeatsDisplay.textContent = 'None selected';
+                totalAmountDisplay.textContent = '$0.00';
+            }
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (selectedSeats.length === 0) {
+                showError('Please select at least one seat');
+                return;
+            }
+
+            try {
+                showLoading();
+                const response = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        movieId: movie._id,
+                        showTime: showTime,
+                        seats: selectedSeats,
+                        totalAmount: selectedSeats.length * PRICE_PER_SEAT
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create booking');
+                }
+
+                const booking = await response.json();
+                window.location.href = `/confirmation/${booking._id}`;
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'Failed to create booking');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Initialize page
+        fetchMovieAndShowTime();
+    </script>
+</body>
+</html>
