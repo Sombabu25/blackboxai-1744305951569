@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieTix - Book Movie Tickets Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-indigo-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <i class="fas fa-film text-2xl mr-2"></i>
+                        <span class="text-xl font-semibold">MovieTix</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center space-x-4" id="navLinks">
+                    <a href="/" class="hover:text-indigo-200">Home</a>
+                    <a href="#movies" class="hover:text-indigo-200">Movies</a>
+                    <a href="#about" class="hover:text-indigo-200">About</a>
+                    <!-- Auth links will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="relative bg-indigo-900 text-white py-24">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">Book Your Movie Tickets Online</h1>
+                <p class="text-lg mb-8">Experience the latest blockbusters in premium quality. Book your tickets now!</p>
+                <a href="#movies" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                    Browse Movies
+                </a>
+            </div>
+        </div>
+        <div class="absolute bottom-0 right-0 opacity-10">
+            <i class="fas fa-ticket-alt text-9xl"></i>
+        </div>
+    </div>
+
+    <!-- Movies Section -->
+    <section id="movies" class="py-16">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8">Now Showing</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" id="moviesGrid">
+                <!-- Movies will be dynamically loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="bg-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto text-center">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">About MovieTix</h2>
+                <p class="text-gray-600 mb-8">
+                    MovieTix is your premier destination for booking movie tickets online. We offer a seamless booking experience
+                    with access to the latest movies, comfortable seating, and great prices.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-6 bg-gray-50 rounded-lg">
+                        <i class="fas fa-ticket-alt text-3xl text-indigo-600 mb-4"></i>
+                        <h3 class="font-semibold mb-2">Easy Booking</h3>
+                        <p class="text-gray-600">Book your tickets in just a few clicks</p>
+                    </div>
+                    <div class="p-6 bg-gray-50 rounded-lg">
+                        <i class="fas fa-film text-3xl text-indigo-600 mb-4"></i>
+                        <h3 class="font-semibold mb-2">Latest Movies</h3>
+                        <p class="text-gray-600">Access to all the latest releases</p>
+                    </div>
+                    <div class="p-6 bg-gray-50 rounded-lg">
+                        <i class="fas fa-couch text-3xl text-indigo-600 mb-4"></i>
+                        <h3 class="font-semibold mb-2">Best Seats</h3>
+                        <p class="text-gray-600">Choose your preferred seating</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <span class="text-xl font-semibold">MovieTix</span>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="hover:text-indigo-400"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="hover:text-indigo-400"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-indigo-400"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="mt-4 text-center text-gray-400 text-sm">
+                &copy; 2024 MovieTix. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Check authentication status and update UI
+        function updateAuthUI() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user'));
+            const navLinks = document.getElementById('navLinks');
+
+            if (token && user) {
+                // User is logged in
+                navLinks.innerHTML += `
+                    <a href="/profile" class="hover:text-indigo-200">
+                        <i class="fas fa-user mr-1"></i>
+                        ${user.username}
+                    </a>
+                    <a href="#" id="logoutBtn" class="hover:text-indigo-200">Logout</a>
+                `;
+
+                // Add logout event listener
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.reload();
+                });
+            } else {
+                // User is not logged in
+                navLinks.innerHTML += `
+                    <a href="/login" class="hover:text-indigo-200">Login</a>
+                    <a href="/signup" class="hover:text-indigo-200">Sign Up</a>
+                `;
+            }
+        }
+
+        // Fetch and display movies
+        async function fetchMovies() {
+            try {
+                const response = await fetch('/api/movies');
+                const movies = await response.json();
+                const moviesGrid = document.getElementById('moviesGrid');
+                
+                movies.forEach(movie => {
+                    const movieCard = `
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition duration-300">
+                            <img src="${movie.posterUrl}" alt="${movie.title}" class="w-full h-64 object-cover">
+                            <div class="p-6">
+                                <h3 class="text-xl font-semibold mb-2">${movie.title}</h3>
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                    <span>${movie.rating}/10</span>
+                                </div>
+                                <p class="text-gray-600 mb-4">${movie.genre.join(', ')}</p>
+                                <a href="/movie/${movie._id}" 
+                                   class="block text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition duration-300">
+                                    Book Now
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    moviesGrid.innerHTML += movieCard;
+                });
+            } catch (error) {
+                console.error('Error fetching movies:', error);
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAuthUI();
+            fetchMovies();
+        });
+    </script>
+</body>
+</html>
