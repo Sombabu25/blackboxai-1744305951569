@@ -5,7 +5,7 @@ const Booking = require('../models/Booking');
 const { auth } = require('../middleware/auth');
 
 // GET all movies
-router.get('/movies', async (req, res) => {
+router.get('/api/movies', async (req, res) => {
     try {
         const movies = await Movie.find();
         res.json(movies);
@@ -16,7 +16,7 @@ router.get('/movies', async (req, res) => {
 });
 
 // GET single movie
-router.get('/movies/:id', async (req, res) => {
+router.get('/api/movies/:id', async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
         if (!movie) {
@@ -30,7 +30,7 @@ router.get('/movies/:id', async (req, res) => {
 });
 
 // POST create booking (protected route)
-router.post('/bookings', auth, async (req, res) => {
+router.post('/api/bookings', auth, async (req, res) => {
     try {
         const { movieId, showTime, seats, totalAmount } = req.body;
 
@@ -85,7 +85,7 @@ router.post('/bookings', auth, async (req, res) => {
 });
 
 // GET booking by ID (protected route)
-router.get('/bookings/:id', auth, async (req, res) => {
+router.get('/api/bookings/:id', auth, async (req, res) => {
     try {
         const booking = await Booking.findOne({
             _id: req.params.id,
@@ -104,7 +104,7 @@ router.get('/bookings/:id', auth, async (req, res) => {
 });
 
 // GET user's bookings (protected route)
-router.get('/user/bookings', auth, async (req, res) => {
+router.get('/api/user/bookings', auth, async (req, res) => {
     try {
         const bookings = await Booking.find({ userId: req.userId })
             .populate('movieId')
