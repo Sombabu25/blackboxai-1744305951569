@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
-const routes = require('./routes');
+const indexRoutes = require('./routes/index');
 const authRoutes = require('./routes/auth');
 
 // Load environment variables
@@ -23,7 +23,7 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/views', express.static(path.join(__dirname, 'views')));
 
 // API Routes
-app.use('/api', routes);
+app.use('/api', indexRoutes);
 app.use('/auth', authRoutes);
 
 // HTML Routes
@@ -55,7 +55,7 @@ app.get('/confirmation/:id', (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'confirmation.html'));
 });
 
-// Handle 404 - Keep this as the last route
+// Handle 404
 app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
 });
